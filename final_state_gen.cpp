@@ -7,7 +7,7 @@ using namespace std;
 typedef pair<string, int> PAIR;
 
 ostream& operator<<(ostream& out, const PAIR& p) {
-    return out << p.first << '\t' << p.second;
+    return out << p.first << ' ' << p.second;
 }
 
 int main () {
@@ -16,7 +16,8 @@ int main () {
     int account_num;
     file >> account_num;
     string base_id;
-    while (file >> base_id) {
+    while (account_num--) {
+        file >> base_id;
         int money;
         file >> money;
         account_balance[base_id] += money;
