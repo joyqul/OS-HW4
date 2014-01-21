@@ -16,6 +16,16 @@ typedef map<int, PAIR> MAP_PA;
 typedef map<int, vector<string> > MAP_VEC;
 typedef vector<PAIR> VEC_PA;
 
+int section_num;
+MAP_CH tran_type; // T_id, B or T
+MAP_STR tran_forward_id; // T_id, forward_id
+MAP_INT tran_forward_money; // T_id, forward_money
+MAP_INT tran_sec_id; // T_id, sec_id
+MAP_PA tran_sec; // sec_id, <account, money>
+MAP_VEC sec_tran; // one scetion's transactions
+MAP_INT account_balance;
+MAP_INT log_account_balance; // T_id, balance when B
+MAP_BO tran_done; // sec_id, true for done
 
 ostream& operator<<(ostream& out, const PAIR& p) {
     return out << p.first << ' ' << p.second;
@@ -25,12 +35,8 @@ bool cmp_by_value(const PAIR& lhs, const PAIR& rhs) {
     return lhs.second < rhs.second;
 }
 
-bool mark(int sections[], VEC_PA::iterator& simulate_log, 
-        const VEC_PA::iterator simulate_end, MAP_INT tran_sec_id,
-        MAP_BO tran_done, const int now_sec_id, const int section_num,
-        MAP_INT& account_balance, MAP_PA tran_sec, MAP_STR tran_forward_id, 
-        MAP_INT tran_forward_money, MAP_VEC sec_tran, MAP_CH tran_type,
-        MAP_INT log_account_balance) {
+bool mark(int sections[], VEC_PA::iterator simulate_log, 
+        VEC_PA::iterator simulate_end, int now_sec_id) {
 
     bool mutual[section_num];
     for (int i = 0; i < section_num; ++i)
@@ -97,10 +103,7 @@ bool mark(int sections[], VEC_PA::iterator& simulate_log,
     return true;
 }
 
-void verify(VEC_PA log_transaction, MAP_BO tran_done, const int section_num, 
-        MAP_INT tran_sec_id, MAP_PA tran_sec, MAP_STR tran_forward_id, 
-        MAP_INT tran_forward_money, MAP_VEC sec_tran, MAP_CH tran_type, 
-        const MAP_INT log_account_balance) {
+void verify(VEC_PA log_transaction) {
 
     VEC_PA::iterator simulate_log = log_transaction.begin();
     VEC_PA::iterator simulate_end = log_transaction.end();
@@ -110,12 +113,9 @@ void verify(VEC_PA log_transaction, MAP_BO tran_done, const int section_num,
         sections[i] = 0;
     }
 
-    MAP_INT account_balance;
     int max_timestamp = (--log_transaction.end())->second;
     for (int i = 0; i <= max_timestamp; ++i) {
-        if (!mark(sections, simulate_log, simulate_end, tran_sec_id, tran_done, 
-                i, section_num, account_balance, tran_sec, tran_forward_id, 
-                tran_forward_money, sec_tran, tran_type, log_account_balance))
+        if (!mark(sections, simulate_log, simulate_end, i))
             return;
     }
 
@@ -123,17 +123,10 @@ void verify(VEC_PA log_transaction, MAP_BO tran_done, const int section_num,
 }
 
 int main () {
-    MAP_CH tran_type; // T_id, B or T
-    MAP_STR tran_forward_id; // T_id, forward_id
-    MAP_INT tran_forward_money; // T_id, forward_money
-    MAP_INT tran_sec_id; // T_id, sec_id
-    MAP_PA tran_sec; // sec_id, <account, money>
-    MAP_VEC sec_tran; // one scetion's transactions
 
     // read the transaction.txt
     ifstream file("transactions.txt");
 
-    int section_num;;
     file >> section_num;
     
     string base_id;
@@ -168,9 +161,7 @@ int main () {
     }
 
     // sort the log transaction
-    MAP_INT log_account_balance; // T_id, balance when B
     MAP_INT log_transaction; // T_id, timestamp
-    MAP_BO tran_done; // sec_id, true for done
     ifstream logfile("transaction_log.txt");
 
     string tran_id;
@@ -190,8 +181,8 @@ int main () {
     VEC_PA log_transaction_vec(log_transaction.begin(), log_transaction.end());
     sort(log_transaction_vec.begin(), log_transaction_vec.end(), cmp_by_value);
 
-    verify(log_transaction_vec, tran_done, section_num, tran_sec_id, 
-            tran_sec, tran_forward_id, tran_forward_money, sec_tran, tran_type, log_account_balance);
+    //verify();
+    verify(log_transaction_vec);
 
     return 0;
 }
