@@ -1,5 +1,6 @@
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <fstream>
 #include <algorithm>
 #include <vector>
@@ -7,31 +8,110 @@
 using namespace std;
 
 typedef pair<string, int> PAIR;
+typedef map<string, char> MAP_CH;
+typedef map<string, bool> MAP_BO;
+typedef map<string, string> MAP_STR;
+typedef map<string, int> MAP_INT;
+typedef map<int, PAIR> MAP_PA;
+typedef vector<PAIR> VEC_PA;
+
 
 ostream& operator<<(ostream& out, const PAIR& p) {
-    return out << p.first << '\t' << p.second;
+    return out << p.first << ' ' << p.second;
 }
 
 bool cmp_by_value(const PAIR& lhs, const PAIR& rhs) {
     return lhs.second < rhs.second;
 }
 
+bool non_neg() {
+    return true;
+}
+
+void find_sec_begin(VEC_PA::iterator sections[], 
+        VEC_PA tran_sec_id, const int section_num) {
+    int pre_sec = 0;
+    sections[0] = tran_sec_id.begin();
+
+    int i = 1;
+    for (VEC_PA::iterator it = tran_sec_id.begin(); 
+            it != tran_sec_id.end() && i < section_num; ++it) {
+        if (it->second != pre_sec) {
+            sections[i] = it;
+            ++i;
+            ++pre_sec;
+        }
+    }
+    return;
+}
+
+bool mark(VEC_PA::iterator sections[], VEC_PA::iterator& simulate_log, 
+        const VEC_PA::iterator simulate_end, MAP_INT tran_sec_id,
+        MAP_BO tran_done, const int now_sec_id, const int section_num) {
+
+    bool mutual[section_num];
+    for (int i = 0; i < section_num; ++i)
+        mutual[i] = false;
+
+    for (; simulate_log != simulate_end && now_sec_id == simulate_log->second; 
+            ++simulate_log) {
+        // to see if whether the string is the first one of each section
+        string now_tran = simulate_log->first;
+        int now_sec = tran_sec_id[now_tran];
+        if (sections[now_sec]->first != now_tran) {
+            cout << "Invalid answer: inner section order wrong" << endl;
+            cout << "transaction: " << now_tran << " occure before " 
+                << sections[now_sec]->first << endl;
+            return false;
+        }
+        else {
+            ++sections[now_sec];
+        }
+
+        // to see whether each section has one transaction
+        if (mutual[now_sec]) {
+            cout << "Invalid answer: more than one transaction in one section" << endl;
+            cout << "transaction: " << now_tran << " in section" << now_sec << endl;
+            return false;
+        }
+        else {
+            mutual[now_sec] = true;
+        }
+
+        tran_done[simulate_log->first] = true;
+    }
+    --simulate_log;
+    return true;
+}
+
+void verify(VEC_PA log_transaction, VEC_PA tran_sec_id, MAP_BO tran_done, 
+        const int section_num, MAP_INT tran_sec_id_map) {
+    VEC_PA::iterator simulate_log = log_transaction.begin();
+    VEC_PA::iterator simulate_end = log_transaction.end();
+    VEC_PA::iterator* sections = new VEC_PA::iterator[section_num];
+    find_sec_begin(sections, tran_sec_id, section_num); // cut the sections
+    
+    for (int i = 0; i < section_num; ++i) {
+        mark(sections, simulate_log, simulate_end, tran_sec_id_map, tran_done, i, section_num);
+    }
+}
+
 int main () {
-    map<string, char> tran_type; // T_id, B or T
-    map<string, string> tran_forwoard_id; // T_id, forward_id
-    map<string, int> tran_forwoard_money; // T_id, forward_money
-    map<string, int> tran_sec_id; // T_id, sec_id
-    map<int, PAIR> tran_sec; // sec_id, <account, money>
+    MAP_CH tran_type; // T_id, B or T
+    MAP_STR tran_forwoard_id; // T_id, forward_id
+    MAP_INT tran_forwoard_money; // T_id, forward_money
+    MAP_INT tran_sec_id; // T_id, sec_id
+    MAP_PA tran_sec; // sec_id, <account, money>
 
     // read the transaction.txt
     ifstream file("transactions.txt");
 
-    int account_num;
-    file >> account_num;
+    int section_num;;
+    file >> section_num;
     
     string base_id;
     int now_sec_id = 0;
-    while (account_num--){
+    for (int i = 0; i < section_num; ++i) {
 
         file >> base_id;
         int money;
@@ -58,18 +138,33 @@ int main () {
     }
 
     // sort the log transaction
-    map<string, int> account_balance;
-    map<string, int> log_transaction;
-    map<string, int> log_balance;
+    MAP_INT log_account_balance; // T_id, balance when B
+    MAP_INT log_transaction; // T_id, timestamp
+    MAP_BO tran_done; // sec_id, true for done
     ifstream logfile("transaction_log.txt");
 
     string tran_id;
+    int timestamp;
     while (logfile >> tran_id) {
-        
+        logfile >> timestamp;
+        log_transaction[tran_id] = timestamp;
+        tran_done[tran_id] = false;
+        if (tran_type[tran_id] == 'B') {
+            int balance;
+            logfile >> balance;
+            log_account_balance[tran_id] = balance;
+        }
     }
 
-    vector<PAIR> log_transaction_vec(log_transaction.begin(), log_transaction.end());
+    // sort log transactions by timestamp
+    VEC_PA log_transaction_vec(log_transaction.begin(), log_transaction.end());
     sort(log_transaction_vec.begin(), log_transaction_vec.end(), cmp_by_value);
+
+    // sort tran_id by sec_id
+    VEC_PA tran_sec_id_vec(tran_sec_id.begin(), tran_sec_id.end());
+    sort(tran_sec_id_vec.begin(), tran_sec_id_vec.end(), cmp_by_value);
+
+    //verify();
 
     return 0;
 }
