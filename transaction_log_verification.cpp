@@ -29,7 +29,8 @@ bool mark(int sections[], VEC_PA::iterator& simulate_log,
         const VEC_PA::iterator simulate_end, MAP_INT tran_sec_id,
         MAP_BO tran_done, const int now_sec_id, const int section_num,
         MAP_INT& account_balance, MAP_PA tran_sec, MAP_STR tran_forward_id, 
-        MAP_INT tran_forward_money, MAP_VEC sec_tran) {
+        MAP_INT tran_forward_money, MAP_VEC sec_tran, MAP_CH tran_type,
+        MAP_INT log_account_balance) {
 
     bool mutual[section_num];
     for (int i = 0; i < section_num; ++i)
@@ -59,6 +60,9 @@ bool mark(int sections[], VEC_PA::iterator& simulate_log,
             if (!sections[orig_sec]) {
                 account_balance[tran_sec[orig_sec].first] += tran_sec[orig_sec].second;
             }
+            if (tran_type[now_tran] == 'T') {
+                mutual[tran_sec_id[tran_forward_id[now_tran]]] = true;
+            }
         }
 
         // do the bank!
@@ -75,6 +79,17 @@ bool mark(int sections[], VEC_PA::iterator& simulate_log,
             account_balance[base_id] -= tran_money;
         }
 
+        // Check the account
+        if (tran_type[now_tran] == 'B') {
+            if (account_balance[now_tran] != log_account_balance[now_tran]) {
+                cout << "Wrong account balance" << endl;
+                cout << "transaction: " << now_tran << endl;
+                cout << "your balance: " << log_account_balance[now_tran] 
+                    << " correct balance: " << account_balance[base_id] << endl;
+                return false;
+            }
+        }
+        
         ++sections[orig_sec];
         tran_done[now_tran] = true;
     }
@@ -84,7 +99,8 @@ bool mark(int sections[], VEC_PA::iterator& simulate_log,
 
 void verify(VEC_PA log_transaction, MAP_BO tran_done, const int section_num, 
         MAP_INT tran_sec_id, MAP_PA tran_sec, MAP_STR tran_forward_id, 
-        MAP_INT tran_forward_money, MAP_VEC sec_tran) {
+        MAP_INT tran_forward_money, MAP_VEC sec_tran, MAP_CH tran_type, 
+        const MAP_INT log_account_balance) {
 
     VEC_PA::iterator simulate_log = log_transaction.begin();
     VEC_PA::iterator simulate_end = log_transaction.end();
@@ -99,7 +115,7 @@ void verify(VEC_PA log_transaction, MAP_BO tran_done, const int section_num,
     for (int i = 0; i <= max_timestamp; ++i) {
         if (!mark(sections, simulate_log, simulate_end, tran_sec_id, tran_done, 
                 i, section_num, account_balance, tran_sec, tran_forward_id, 
-                tran_forward_money, sec_tran))
+                tran_forward_money, sec_tran, tran_type, log_account_balance))
             return;
     }
 
@@ -175,7 +191,7 @@ int main () {
     sort(log_transaction_vec.begin(), log_transaction_vec.end(), cmp_by_value);
 
     verify(log_transaction_vec, tran_done, section_num, tran_sec_id, 
-            tran_sec, tran_forward_id, tran_forward_money, sec_tran);
+            tran_sec, tran_forward_id, tran_forward_money, sec_tran, tran_type, log_account_balance);
 
     return 0;
 }
