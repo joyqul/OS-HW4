@@ -4,6 +4,12 @@
 
 using namespace std;
 
+typedef pair<string, int> PAIR;
+
+ostream& operator<<(ostream& out, const PAIR& p) {
+    return out << p.first << '\t' << p.second;
+}
+
 int main () {
     map<string, int> account_balance;
     ifstream file("final_state_answer.txt");
@@ -14,6 +20,6 @@ int main () {
         account_balance[s] = money;
     }
     for (map<string, int>::iterator it = account_balance.begin(); it != account_balance.end(); ++it) 
-        cout << it->first << " " << it->second << endl;
+        cout << *it << endl;
     return 0;
 }
