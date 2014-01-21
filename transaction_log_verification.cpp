@@ -24,10 +24,6 @@ bool cmp_by_value(const PAIR& lhs, const PAIR& rhs) {
     return lhs.second < rhs.second;
 }
 
-bool non_neg() {
-    return true;
-}
-
 void find_sec_begin(VEC_PA::iterator sections[], 
         VEC_PA tran_sec_id, const int section_num) {
     int pre_sec = 0;
@@ -47,7 +43,9 @@ void find_sec_begin(VEC_PA::iterator sections[],
 
 bool mark(VEC_PA::iterator sections[], VEC_PA::iterator& simulate_log, 
         const VEC_PA::iterator simulate_end, MAP_INT tran_sec_id,
-        MAP_BO tran_done, const int now_sec_id, const int section_num) {
+        MAP_BO tran_done, const int now_sec_id, const int section_num,
+        bool section_beginning[], MAP_INT account_balance, MAP_PA tran_sec,
+        MAP_STR tran_forwoard_id, MAP_INT tran_forwoard_money) {
 
     bool mutual[section_num];
     for (int i = 0; i < section_num; ++i)
@@ -56,7 +54,7 @@ bool mark(VEC_PA::iterator sections[], VEC_PA::iterator& simulate_log,
     for (; simulate_log != simulate_end && now_sec_id == simulate_log->second; 
             ++simulate_log) {
         // to see if whether the string is the first one of each section
-        string now_tran = simulate_log->first;
+        string now_tran = simulate_log->first;  // T_id
         int now_sec = tran_sec_id[now_tran];
         if (sections[now_sec]->first != now_tran) {
             cout << "Invalid answer: inner section order wrong" << endl;
@@ -76,6 +74,24 @@ bool mark(VEC_PA::iterator sections[], VEC_PA::iterator& simulate_log,
         }
         else {
             mutual[now_sec] = true;
+            if (section_beginning[now_sec]) {
+                account_balance[tran_sec[now_sec].first] += tran_sec[now_sec].second;
+                section_beginning[now_sec] = false;
+            }
+        }
+
+        // do the bank!
+        int tran_money = tran_forwoard_money[now_tran];
+        string base_id = sections[now_sec]->first;
+        if (tran_money > account_balance[base_id]) {
+            cout << "Invalid answer: negtive account" <<endl;
+            cout << "transaction: " << now_tran << endl;
+            cout << "account: " << base_id << " will be negtive" << endl;
+            return false;
+        }
+        else {
+            account_balance[tran_forwoard_id[now_tran]] += tran_money;
+            account_balance[base_id] -= tran_money;
         }
 
         tran_done[simulate_log->first] = true;
@@ -85,14 +101,24 @@ bool mark(VEC_PA::iterator sections[], VEC_PA::iterator& simulate_log,
 }
 
 void verify(VEC_PA log_transaction, VEC_PA tran_sec_id, MAP_BO tran_done, 
-        const int section_num, MAP_INT tran_sec_id_map) {
+        const int section_num, MAP_INT tran_sec_id_map, MAP_PA tran_sec,
+        MAP_STR tran_forwoard_id, MAP_INT tran_forwoard_money) {
     VEC_PA::iterator simulate_log = log_transaction.begin();
     VEC_PA::iterator simulate_end = log_transaction.end();
     VEC_PA::iterator* sections = new VEC_PA::iterator[section_num];
     find_sec_begin(sections, tran_sec_id, section_num); // cut the sections
     
-    for (int i = 0; i < section_num; ++i) {
-        mark(sections, simulate_log, simulate_end, tran_sec_id_map, tran_done, i, section_num);
+    bool section_beginning[section_num];
+    for (int i = 0; i < section_num; ++i)
+        section_beginning[i] = true;
+
+    MAP_INT account_balance;
+    int max_timestamp = (--log_transaction.end())->second;
+    for (int i = 0; i < max_timestamp; ++i) {
+        if (!mark(sections, simulate_log, simulate_end, tran_sec_id_map, tran_done, 
+                i, section_num, section_beginning, account_balance, tran_sec,
+                tran_forwoard_id, tran_forwoard_money))
+            return;
     }
 }
 
@@ -165,6 +191,8 @@ int main () {
     sort(tran_sec_id_vec.begin(), tran_sec_id_vec.end(), cmp_by_value);
 
     //verify();
+    verify(log_transaction_vec, tran_sec_id_vec, tran_done, section_num, 
+            tran_sec_id, tran_sec, tran_forwoard_id, tran_forwoard_money);
 
     return 0;
 }
