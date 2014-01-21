@@ -68,7 +68,7 @@ void bank(int now_tran[], int last_tran[], int now_sec_id, int& now_stamp, fstre
                 ++now_stamp;
             }
         }
-        else if (account_balance[base_id] > tran_money) {
+        else if (account_balance[base_id] >= tran_money) {
             account_balance[base_id] -= tran_money;
             account_balance[forward_id] += tran_money;
 
@@ -103,6 +103,7 @@ void schedule(int last_tran[], fstream& file) {
         for (int now_sec_id = 0; now_sec_id < sec_num; ++now_sec_id) {
             bank(now_tran, last_tran, now_sec_id, now_stamp, file);
         }
+        cout << "QQ" << endl;
     }
 }
 

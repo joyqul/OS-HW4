@@ -14,10 +14,16 @@ typedef map<int, PAIR> MAP_PA;
 typedef map<int, vector<string> > MAP_VEC;
 typedef vector<PAIR> VEC_PA;
 
-void bank(const int sec_num, int now_tran[], int last_tran[], const int now_stamp,
-        fstream& file, MAP_INT& account_balance, MAP_VEC sec_tran, MAP_PA tran_sec,
-        MAP_STR tran_forward_id, MAP_INT tran_forward_money, MAP_CH tran_type,
-        MAP_INT tran_sec_id) {
+int sec_num;;
+MAP_CH tran_type; // T_id, B or T
+MAP_STR tran_forward_id; // T_id, forward_id
+MAP_INT tran_forward_money; // T_id, forward_money
+MAP_INT tran_sec_id; // T_id, sec_id
+MAP_INT account_balance;
+MAP_PA tran_sec; // sec_id, <account, money>
+MAP_VEC sec_tran; // one scetion's transactions
+
+void bank(int now_tran[], int last_tran[], const int now_stamp, fstream& file) {
     // Lock
     bool locked[sec_num];
     for (int i = 0; i < sec_num; ++i)
@@ -36,7 +42,6 @@ void bank(const int sec_num, int now_tran[], int last_tran[], const int now_stam
             file.open("transaction_log.txt", fstream::app);
             file << now_tran_id << " " << now_stamp << " " << account_balance[base_id] << endl;
             cout << now_tran_id << " " << now_stamp << " " << account_balance[base_id] << endl;
-            file.close();
         }
     }
 
@@ -68,7 +73,6 @@ void bank(const int sec_num, int now_tran[], int last_tran[], const int now_stam
                 file.open("transaction_log.txt", fstream::app);
                 file << now_tran_id << " " << now_stamp << endl;
                 cout << now_tran_id << " " << now_stamp << endl;
-                file.close();
 
                 ++now_tran[now_sec_id];
                 locked[now_sec_id] = true;
@@ -82,7 +86,6 @@ void bank(const int sec_num, int now_tran[], int last_tran[], const int now_stam
             file.open("transaction_log.txt", fstream::app);
             file << now_tran_id << " " << now_stamp << endl;
             cout << now_tran_id << " " << now_stamp << endl;
-            file.close();
 
             ++now_tran[now_sec_id];
             locked[now_sec_id] = true;
@@ -92,7 +95,7 @@ void bank(const int sec_num, int now_tran[], int last_tran[], const int now_stam
 
 }
 
-bool finished(const int sec_num, int last_tran[], int now_tran[]) {
+bool finished(int last_tran[], int now_tran[]) {
     for (int now_sec_id = 0; now_sec_id < sec_num; ++now_sec_id) {
         if (last_tran[now_sec_id] != now_tran[now_sec_id]) {
             return false;
@@ -101,37 +104,27 @@ bool finished(const int sec_num, int last_tran[], int now_tran[]) {
     return true;
 }
 
-void schedule(const int sec_num, int last_tran[], fstream& file,
-        MAP_VEC sec_tran, MAP_PA tran_sec, MAP_STR tran_forward_id, 
-        MAP_INT tran_forward_money, MAP_CH tran_type,
-        MAP_INT tran_sec_id) {
+void schedule(int last_tran[], fstream& file) {
 
     int now_stamp = 1;
     int now_tran[sec_num];
     for (int i = 0; i < sec_num; ++i)
         now_tran[i] = 0;
 
-    MAP_INT account_balance;
 
-    while (!finished(sec_num, last_tran, now_tran)) {
-        bank(sec_num, now_tran, last_tran, now_stamp, file, account_balance, sec_tran, tran_sec,
-                tran_forward_id, tran_forward_money, tran_type, tran_sec_id);
+    while (!finished(last_tran, now_tran)) {
+        bank(now_tran, last_tran, now_stamp, file);
         ++now_stamp;
     }
+
+    file.close();
 }
 
 int main () {
-    MAP_CH tran_type; // T_id, B or T
-    MAP_STR tran_forward_id; // T_id, forward_id
-    MAP_INT tran_forward_money; // T_id, forward_money
-    MAP_INT tran_sec_id; // T_id, sec_id
-    MAP_PA tran_sec; // sec_id, <account, money>
-    MAP_VEC sec_tran; // one scetion's transactions
 
     // read the transaction.txt
     fstream file("transactions.txt", fstream::in);
 
-    int sec_num;;
     file >> sec_num;
 
     string base_id;
@@ -170,10 +163,8 @@ int main () {
 
     
     file.open("transaction_log.txt", fstream::out);
-    file.close();
 
-    schedule(sec_num, last_tran, file, sec_tran, tran_sec, tran_forward_id, 
-            tran_forward_money, tran_type, tran_sec_id);
+    schedule(last_tran, file);
 
     return 0;
 }
