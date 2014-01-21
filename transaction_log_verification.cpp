@@ -81,7 +81,7 @@ bool mark(int sections[], VEC_PA::iterator& simulate_log,
 
         // Check the account
         if (tran_type[now_tran] == 'B') {
-            if (account_balance[now_tran] != log_account_balance[now_tran]) {
+            if (account_balance[base_id] != log_account_balance[now_tran]) {
                 cout << "Wrong account balance" << endl;
                 cout << "transaction: " << now_tran << endl;
                 cout << "your balance: " << log_account_balance[now_tran] 
