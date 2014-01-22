@@ -41,10 +41,6 @@ void bank(int now_tran[], int last_tran[], int now_sec_id, int& now_stamp,
         int tran_money = tran_forward_money[now_tran_id];
 
         if (tran_type[now_tran_id] == 'B') {
-            if (now_tran[now_sec_id] == 0) {
-                int money = tran_sec[now_sec_id].second;
-                account_balance[base_id] += money;
-            }
 
             file << now_tran_id << " " << now_stamp << " " << account_balance[base_id]<< endl;
 
