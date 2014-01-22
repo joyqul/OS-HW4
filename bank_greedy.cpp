@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <fstream>
-#define MAX 50
+#define MAX 20
 
 using namespace std;
 
@@ -68,26 +68,7 @@ void bank(int now_tran[], int last_tran[], const int now_stamp,
 
         int tran_money = tran_forward_money[now_tran_id];
 
-        if (now_tran[now_sec_id] == 0) {
-            int money = tran_sec[now_sec_id].second;
-            account_balance[base_id] += money;
-
-            if (account_balance[base_id] < tran_money) {
-                account_balance[base_id] -= money;
-                continue;
-            }
-            else {
-                account_balance[base_id] -= tran_money;
-                account_balance[forward_id] += tran_money;
-
-                file << now_tran_id << " " << now_stamp << endl;
-
-                ++now_tran[now_sec_id];
-                locked[now_sec_id] = true;
-                locked[tran_sec_id[forward_id]] = true;
-            }
-        }
-        else if (account_balance[base_id] > tran_money) {
+        if (account_balance[base_id] >= tran_money) {
             account_balance[base_id] -= tran_money;
             account_balance[forward_id] += tran_money;
 
@@ -129,8 +110,9 @@ void schedule(int last_tran[]) {
         bank(now_tran, last_tran, now_stamp, file, finish);
         ++now_stamp;
     }
-
     file.close();
+
+    file.open
 }
 
 int main () {
@@ -153,11 +135,7 @@ int main () {
         int transaction;
         file >> transaction;
 
-        if (!transaction) {
-            account_balance[base_id] = money;
-            continue;
-        }
-        
+        account_balance[base_id] = money;
         tran_sec[now_sec_id] = make_pair(base_id, money);
         last_tran[now_sec_id] = transaction;
         vector<string> tmp_sec_tran;

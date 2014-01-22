@@ -47,6 +47,7 @@ bool mark(int sections[], VEC_PA::iterator simulate_log,
         // to see if whether the string is the first one of each section
         string now_tran = simulate_log->first;  // T_id
         int orig_sec = tran_sec_id[now_tran]; // origin sec
+
         if ((sec_tran[orig_sec])[sections[orig_sec]] != now_tran) {
             cout << "Invalid answer: inner section order wrong" << endl;
             cout << "transaction: " << now_tran << " occure before " 
@@ -62,12 +63,9 @@ bool mark(int sections[], VEC_PA::iterator simulate_log,
         }
         else {
             mutual[orig_sec] = true;
-            if (!sections[orig_sec]) {
-                account_balance[tran_sec[orig_sec].first] += tran_sec[orig_sec].second;
-            }
-            if (tran_type[now_tran] == 'T') {
-                mutual[tran_sec_id[tran_forward_id[now_tran]]] = true;
-            }
+//            if (tran_type[now_tran] == 'T') {
+//                mutual[tran_sec_id[tran_forward_id[now_tran]]] = true;
+//            }
         }
 
         // do the bank!
@@ -136,6 +134,7 @@ int main () {
         file >> money;
 
         tran_sec[now_sec_id] = make_pair(base_id, money);
+        account_balance[base_id] = money;
 
         int transaction;
         file >> transaction;
