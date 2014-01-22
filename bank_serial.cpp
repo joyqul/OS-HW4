@@ -145,13 +145,14 @@ int main () {
         last_tran[now_sec_id] = transaction;
         vector<string> tmp_sec_tran;
 
+        tran_sec[now_sec_id] = make_pair(base_id, money);
+
         // 0 transaction
         if (!transaction) {
             account_balance[base_id] += money;
             continue;
         }
 
-        tran_sec[now_sec_id] = make_pair(base_id, money);
 
         while (transaction--) {
             string tran_id;
