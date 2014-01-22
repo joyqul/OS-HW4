@@ -42,7 +42,6 @@ void bank(int now_tran[], int last_tran[], int now_sec_id, int& now_stamp, fstre
             }
 
             file << now_tran_id << " " << now_stamp << " " << account_balance[base_id]<< endl;
-            cout << now_tran_id << " " << now_stamp << " " << account_balance[base_id]<< endl;
 
             ++now_tran[now_sec_id];
             ++now_stamp;
@@ -62,7 +61,6 @@ void bank(int now_tran[], int last_tran[], int now_sec_id, int& now_stamp, fstre
                 account_balance[forward_id] += tran_money;
 
                 file << now_tran_id << " " << now_stamp << endl;
-                cout << now_tran_id << " " << now_stamp << endl;
 
                 ++now_tran[now_sec_id];
                 ++now_stamp;
@@ -73,7 +71,6 @@ void bank(int now_tran[], int last_tran[], int now_sec_id, int& now_stamp, fstre
             account_balance[forward_id] += tran_money;
 
             file << now_tran_id << " " << now_stamp << endl;
-            cout << now_tran_id << " " << now_stamp << endl;
 
             ++now_tran[now_sec_id];
             ++now_stamp;
@@ -103,14 +100,20 @@ void schedule(int last_tran[], fstream& file) {
         for (int now_sec_id = 0; now_sec_id < sec_num; ++now_sec_id) {
             bank(now_tran, last_tran, now_sec_id, now_stamp, file);
         }
-        cout << "QQ" << endl;
     }
+    file.close();
+    
+    file.open("final_state.txt", fstream::out);
+    for (int i = 0; i < sec_num; ++i)
+        file << tran_sec[i].first << " " << account_balance[tran_sec[i].first] << endl;
+    file.close();
 }
 
 int main () {
 
     // read the transaction.txt
-    fstream file("transactions.txt", fstream::in);
+    fstream file;
+    file.open("transactions.txt", fstream::in);
 
     file >> sec_num;
 
@@ -128,6 +131,10 @@ int main () {
         file >> transaction;
         last_tran[now_sec_id] = transaction;
         vector<string> tmp_sec_tran;
+
+        // 0 transaction
+        if (!transaction)
+            account_balance[base_id] += money;
 
         while (transaction--) {
             string tran_id;
